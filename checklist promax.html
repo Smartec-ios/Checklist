@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smartec Checklist Pro - iPhone</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root {
+            --azul: #316ce3;
+            --azul-claro: #4facfe;
+            --amarelo: #f9b233;
+            --amarelo-dark: #c48b29;
+            --preto: #1a1a1a;
+            --fundo: #f0f3f5;
+            --branco: #ffffff;
+            --verde: #25d366;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { background-color: var(--fundo); padding-top: 150px; padding-bottom: 180px; color: #444; }
+
+        /* CABEÇALHO FIXO */
+        .fixed-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 2000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 0 0 0;
+            border-bottom: 3px solid var(--amarelo);
+        }
+
+        .fixed-header img { max-width: 100px; height: auto; margin-bottom: 8px; }
+
+        .fixed-header .sub-title {
+            width: 100%;
+            background: var(--preto);
+            color: var(--amarelo);
+            text-align: center;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+        }
+
+        .container { max-width: 550px; margin: 0 auto; background: var(--branco); border-radius: 25px; padding: 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.05); }
+
+        /* CAIXA DE OS REDUZIDA COM EFEITO */
+        .os-box-container { text-align: center; margin-bottom: 30px; }
+        .os-box { 
+            background: var(--amarelo); 
+            padding: 10px 20px; 
+            border-radius: 15px; 
+            border: 2px solid #000; 
+            display: inline-flex;
+            align-items: center; 
+            gap: 12px;
+            box-shadow: 0 5px 0px var(--amarelo-dark);
+            transition: 0.3s;
+        }
+        .os-box:focus-within { transform: translateY(-2px); box-shadow: 0 7px 15px rgba(249, 178, 51, 0.4); }
+
+        .os-box label { font-size: 14px; font-weight: 900; color: #000; text-transform: uppercase; }
+        .os-box input { 
+            width: 110px;
+            border: 1px solid #000; 
+            border-radius: 8px; 
+            padding: 8px; 
+            font-size: 18px; 
+            font-weight: 900; 
+            outline: none;
+            text-align: center;
+        }
+
+        .section-title { font-size: 14px; font-weight: 800; color: var(--preto); border-left: 5px solid var(--amarelo); padding-left: 12px; margin: 35px 0 18px 0; text-transform: uppercase; }
+
+        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 5px; border-bottom: 1px solid #eee; }
+        
+        .btn-group { display: flex; gap: 8px; }
+        .btn-opt { border: 1px solid #ddd; padding: 10px 18px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; background: #fff; color: #999; text-transform: uppercase; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .btn-opt.active-ok { background: #e6fcf5; color: #0ca678; border-color: #0ca678; box-shadow: 0 4px 10px rgba(12,166,120,0.2); }
+        .btn-opt.active-no { background: #fff5f5; color: #fa5252; border-color: #fa5252; box-shadow: 0 4px 10px rgba(250,82,82,0.2); }
+
+        textarea { width: 100%; border: 1px solid #eee; border-radius: 15px; padding: 15px; font-size: 13px; background: #fafafa; resize: none; min-height: 100px; margin-top: 15px; transition: 0.3s; }
+        textarea:focus { border-color: var(--amarelo); outline: none; background: #fff; }
+
+        /* RODAPÉ FIXO */
+        .footer-fixed { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: var(--branco); padding: 20px; 
+            border-top: 1px solid #eee; box-shadow: 0 -10px 30px rgba(0,0,0,0.08); z-index: 1001; 
+            border-radius: 20px 20px 0 0;
+        }
+
+        .progress-container { margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 10px; background: #eee; border-radius: 10px; overflow: hidden; }
+        .progress-fill { 
+            width: 0%; height: 100%; 
+            background: linear-gradient(90deg, var(--azul), var(--azul-claro)); 
+            background-size: 200% 100%;
+            animation: gradientFlow 3s infinite linear;
+            transition: width 0.6s ease-in-out; 
+        }
+        @keyframes gradientFlow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+        .progress-text { font-size: 11px; font-weight: 900; color: var(--azul); text-align: right; margin-top: 5px; }
+
+        .button-grid { display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 12px; }
+        
+        button.action { 
+            border: none; border-radius: 16px; 
+            font-weight: 800; font-size: 13px; 
+            cursor: pointer; text-transform: uppercase; 
+            color: white; display: flex; align-items: center; justify-content: center; 
+            gap: 10px; transition: all 0.3s ease;
+            height: 60px;
+        }
+        
+        button.action:active { transform: scale(0.95); }
+
+        .btn-whatsapp { background: var(--verde); box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3); }
+        .btn-reset { background: #343a40; font-size: 11px !important; opacity: 0.9; }
+
+        .date-label { text-align: center; margin-top: 30px; font-size: 13px; color: #aaa; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<div class="fixed-header">
+    <img src="logo-smartec.png" alt="Smartec Logo">
+    <div class="sub-title">Check List iPhone</div>
+</div>
+
+<div class="container">
+    <div class="os-box-container">
+        <div class="os-box">
+            <label>N° OS:</label>
+            <input type="number" id="os_id" placeholder="0000" required>
+        </div>
+    </div>
+
+    <div class="section-title">Funcionamento Físico</div>
+    <div id="list-fisico"></div>
+
+    <div class="section-title">Estético</div>
+    <div id="list-estetico"></div>
+
+    <div class="obs-group">
+        <h3 class="section-title" style="border:none; padding:0;">Observações Gerais</h3>
+        <textarea id="obs" placeholder="Relate detalhes técnicos ou avarias..."></textarea>
+    </div>
+
+    <p class="date-label">DATA: <span id="data_display"></span></p>
+</div>
+
+<div class="footer-fixed">
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="p-fill"></div>
+        </div>
+        <div class="progress-text" id="p-text">PROGRESSO: 0%</div>
+    </div>
+    <div class="button-grid">
+        <button class="action btn-reset" onclick="resetarTudo()">🔄 Limpar</button>
+        <button class="action btn-whatsapp" onclick="gerarEEnviar()">✅ Salvar e Enviar</button>
+    </div>
+</div>
+
+<script>
+    const itensFisicos = [
+        "Frontal (Display)", "Touch Screen", "Botão Power", "Botão +", "Botão -", "Ring (Vibra)", 
+        "Face ID", "Alto-falante Principal", "Auricular", "Sensores/Proximidade", "NFC", 
+        "WI-FI", "Câmera Selfie", "Câmera Traseira", "Carregamento", "Lanterna", 
+        "Sinal de Rede", "Microfones"
+    ];
+
+    const itensEsteticos = ["Lentes das Câmeras", "Chassis", "Tampa de Vidro"];
+    let respostas = {};
+
+    function criarLista(itens, containerId) {
+        const container = document.getElementById(containerId);
+        itens.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'check-item';
+            div.innerHTML = `
+                <span class="item-name">${item}</span>
+                <div class="btn-group">
+                    <button class="btn-opt" onclick="selecionar('${item}', 'OK', this)">OK</button>
+                    <button class="btn-opt" onclick="selecionar('${item}', 'NÃO', this)">NÃO</button>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function selecionar(item, valor, btn) {
+        const parent = btn.parentElement;
+        Array.from(parent.children).forEach(b => b.className = 'btn-opt');
+        if (valor === 'OK') btn.classList.add('active-ok');
+        else btn.classList.add('active-no');
+        respostas[item] = valor;
+        atualizarProgresso();
+    }
+
+    function atualizarProgresso() {
+        const total = itensFisicos.length + itensEsteticos.length;
+        const preenchidos = Object.keys(respostas).length;
+        const porc = Math.round((preenchidos / total) * 100);
+        document.getElementById('p-fill').style.width = porc + "%";
+        document.getElementById('p-text').innerText = `PROGRESSO: ${porc}%`;
+    }
+
+    function resetarTudo() {
+        if(confirm("Deseja apagar todos os dados?")) location.reload();
+    }
+
+    async function gerarEEnviar() {
+        const os = document.getElementById('os_id').value;
+        const obs = document.getElementById('obs').value || "Nenhuma observação.";
+        const data = document.getElementById('data_display').innerText;
+
+        if(!os) {
+            alert("Por favor, informe o número da OS.");
+            document.getElementById('os_id').focus();
+            return;
+        }
+
+        // --- GERAÇÃO DO PDF ---
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.setFillColor(30, 30, 30); 
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(249, 178, 51);
+        doc.setFontSize(22);
+        doc.text("SMARTEC CELULARES", 105, 20, { align: "center" });
+        doc.setFontSize(12);
+        doc.text("CHECKLIST IPHONE", 105, 30, { align: "center" });
+
+        doc.setTextColor(0);
+        doc.text(`N° OS: ${os}`, 20, 50);
+        doc.text(`DATA: ${data}`, 160, 50);
+
+        const rows = Object.entries(respostas).map(([item, status]) => [item, status]);
+        doc.autoTable({
+            startY: 60,
+            head: [['ITEM', 'STATUS']],
+            body: rows,
+            headStyles: { fillColor: [249, 178, 51], textColor: [0, 0, 0] }
+        });
+
+        // Salva o PDF no dispositivo
+        doc.save(`Checklist_OS_${os}.pdf`);
+
+        // --- ENVIO WHATSAPP ---
+        const msg = `*CHECKLIST SMARTEC CONCLUÍDO*%0A*OS:* ${os}%0A*Data:* ${data}%0A%0A_O PDF foi salvo em seus downloads. Anexe-o aqui._`;
+        const url = `https://api.whatsapp.com/send?text=${msg}`;
+        
+        setTimeout(() => {
+            window.open(url, '_blank');
+        }, 1000);
+    }
+
+    document.getElementById('data_display').innerText = new Date().toLocaleDateString('pt-BR');
+    criarLista(itensFisicos, 'list-fisico');
+    criarLista(itensEsteticos, 'list-estetico');
+</script>
+
+</body>
+</html>
